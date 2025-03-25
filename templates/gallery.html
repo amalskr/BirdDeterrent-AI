@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Uploaded Birds Gallery</title>
+</head>
+<body>
+<h2>📸 Uploaded Bird Gallery</h2>
+{% for img in images %}
+    <img src="{{ img }}" alt="bird" width="200" style="margin: 10px; border-radius: 10px;">
+{% endfor %}
+</body>
+</html>

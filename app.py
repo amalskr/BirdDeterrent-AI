@@ -77,8 +77,13 @@ def upload_image():
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     image.save(filepath)
 
-    print(f"✅ Image saved: {filepath}")
     return '✅ Image uploaded successfully!', 200
+
+@app.route('/gallery')
+def gallery():
+    files = os.listdir(UPLOAD_FOLDER)
+    images = [f"/static/uploads/{file}" for file in files if file.lower().endswith(('.jpg', '.jpeg', '.png'))]
+    return render_template('gallery.html', images=images)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
