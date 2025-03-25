@@ -1,7 +1,7 @@
 import os
 import cv2
 import numpy as np
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_from_directory
 from tensorflow import keras
 from datetime import datetime
 from multiprocessing import Value
@@ -115,6 +115,20 @@ def gallery():
     files = os.listdir(UPLOAD_FOLDER)
     images = [f"/static/uploads/{file}" for file in files if file.lower().endswith(('.jpg', '.jpeg', '.png'))]
     return render_template('gallery.html', images=images)
+
+
+ESP32_IMAGE_FOLDER = 'esp32_imgs'
+
+@app.route('/esp32')
+def esp32_gallery():
+    files = os.listdir(ESP32_IMAGE_FOLDER)
+    images = [f"/{ESP32_IMAGE_FOLDER}/{file}" for file in files if file.lower().endswith(('.jpg', '.jpeg', '.png'))]
+    return render_template('esp32_gallery.html', images=images)
+
+# Serve images from the esp32_imgs directory
+@app.route('/esp32_imgs/<filename>')
+def serve_esp32_image(filename):
+    return send_from_directory(ESP32_IMAGE_FOLDER, filename)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
