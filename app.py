@@ -69,18 +69,17 @@ def save_img(img):
     with counter.get_lock():
         counter.value += 1
         count = counter.value
-    img_dir = "esp32_imgs"
-    if not os.path.isdir(img_dir):
-        os.mkdir(img_dir)
-    cv2.imwrite(os.path.join(img_dir,"img_"+str(count)+".jpg"), img)
+
+    if not os.path.isdir(UPLOAD_FOLDER):
+        os.mkdir(UPLOAD_FOLDER)
+    cv2.imwrite(os.path.join("static", "uploads","img_"+str(count)+".jpg"), img)
 # print("Image Saved", end="\n") # debug
 
-@app.route('/upload', methods=['POST','GET'])
+@app.route('/upload', methods=['POST'])
 def upload():
     received = request
     img = None
     if received.files:
-        print(received.files['imageFile'])
         # convert string of image data to uint8
         file  = received.files['imageFile']
         nparr = np.fromstring(file.read(), np.uint8)
@@ -116,19 +115,6 @@ def gallery():
     images = [f"/static/uploads/{file}" for file in files if file.lower().endswith(('.jpg', '.jpeg', '.png'))]
     return render_template('gallery.html', images=images)
 
-
-ESP32_IMAGE_FOLDER = 'esp32_imgs'
-
-@app.route('/esp32')
-def esp32_gallery():
-    files = os.listdir(ESP32_IMAGE_FOLDER)
-    images = [f"/{ESP32_IMAGE_FOLDER}/{file}" for file in files if file.lower().endswith(('.jpg', '.jpeg', '.png'))]
-    return render_template('esp32_gallery.html', images=images)
-
-# Serve images from the esp32_imgs directory
-@app.route('/esp32_imgs/<filename>')
-def serve_esp32_image(filename):
-    return send_from_directory(ESP32_IMAGE_FOLDER, filename)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
