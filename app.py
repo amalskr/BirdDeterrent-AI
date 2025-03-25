@@ -73,7 +73,7 @@ def upload_image():
 
     # Save image with timestamp
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    filename = datetime.now().strftime("esp32_%Y%m%d_%H%M%S.jpg")
+    filename = datetime.now().strftime("esp32_%Y%m%d_%H%M%S.jpeg")
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     image.save(filepath)
 
