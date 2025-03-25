@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from flask import Flask, render_template, request
 from tensorflow import keras
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -59,6 +60,25 @@ def index():
 
     return render_template("index.html")
 
+
+@app.route('/upload', methods=['POST'])
+def upload_image():
+    if 'imageFile' not in request.files:
+        return '❌ No imageFile field in request', 400
+
+    image = request.files['imageFile']
+
+    if image.filename == '':
+        return '❌ No selected file', 400
+
+    # Save image with timestamp
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    filename = datetime.now().strftime("esp32_%Y%m%d_%H%M%S.jpg")
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    image.save(filepath)
+
+    print(f"✅ Image saved: {filepath}")
+    return '✅ Image uploaded successfully!', 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
