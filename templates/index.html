@@ -61,6 +61,12 @@
                 <button type="submit" class="btn-large green" style="margin-top: 20px;">🔍 Identify Bird</button>
             </form>
 
+
+            <form action="/upload" method="post" enctype="multipart/form-data">
+                <input type="file" name="imageFile" id="fileInput" accept="image/*" required>
+                <button type="submit" class="btn-large green" style="margin-top: 20px;">Upload</button>
+            </form>
+
             {% if message %}
                 <p class="red-text center-align" style="margin-top: 10px;">{{ message }}</p>
             {% endif %}
