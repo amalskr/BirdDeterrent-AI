@@ -1,6 +1,8 @@
 absl-py==2.1.0
 astunparse==1.6.3
+beautifulsoup4==4.13.3
 blinker==1.9.0
+bs4==0.0.2
 certifi==2025.1.31
 charset-normalizer==3.4.1
 click==8.1.8
@@ -27,11 +29,13 @@ opencv-python==4.11.0.86
 opt_einsum==3.4.0
 optree==0.14.1
 packaging==24.2
+pillow==11.1.0
 protobuf==5.29.3
 Pygments==2.19.1
 requests==2.32.3
 rich==13.9.4
 six==1.17.0
+soupsieve==2.6
 tensorboard==2.18.0
 tensorboard-data-server==0.7.2
 tensorflow==2.18.0
