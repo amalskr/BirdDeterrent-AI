@@ -4,9 +4,7 @@ import numpy as np
 from flask import Flask, render_template, request, jsonify
 from tensorflow import keras
 import requests
-from io import BytesIO
-from PIL import Image
-from datetime import datetime
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
@@ -118,9 +116,25 @@ def index():
 
 @app.route('/gallery')
 def gallery():
-    files = os.listdir(UPLOAD_FOLDER)
-    images = [f"/static/uploads/{file}" for file in files if file.lower().endswith(('.jpg', '.jpeg', '.png'))]
-    return render_template('gallery.html', images=images)
+    base_url = "https://ceylonapz.com/birdai/uploads/"
+    pic_url = "https://ceylonapz.com/"
+    try:
+        response = requests.get(base_url)
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        image_extensions = [".jpg", ".jpeg", ".png"]
+        images = []
+
+        for link in soup.find_all("a"):
+            href = link.get("href")
+            if href and any(href.lower().endswith(ext) for ext in image_extensions):
+                full_url = pic_url + href.lstrip('/')
+                images.append(full_url)
+
+        return render_template('gallery.html', images=images)
+
+    except Exception as e:
+        return f"Error loading gallery: {str(e)}", 500
 
 
 if __name__ == '__main__':
