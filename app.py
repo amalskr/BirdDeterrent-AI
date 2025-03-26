@@ -19,6 +19,16 @@ model.trainable = False
 class_labels = {0: "none", 1: "target"}
 
 
+@app.route('/test', methods=['GET'])
+def test():
+    name = request.args.get('name')
+    return jsonify({
+        "status": "success",
+        "attack": name
+    })
+
+
+
 #=========== URL base Prediction Start
 # predict using image url
 @app.route('/predict', methods=['GET'])
