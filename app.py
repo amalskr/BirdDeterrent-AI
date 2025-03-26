@@ -1,9 +1,6 @@
-import os
-from doctest import debug
-
-import cv2
+import os, cv2, base64, re
 import numpy as np
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, request, jsonify
 from tensorflow import keras
 from datetime import datetime
 from multiprocessing import Value
@@ -77,7 +74,44 @@ def save_img(img):
     cv2.imwrite(os.path.join("static", "uploads","img_"+str(count)+".jpg"), img)
 # print("Image Saved", end="\n") # debug
 
-@app.route('/upload', methods=['POST'])
+@app.route("/upload", methods=["GET", "POST"])
+def upload_predict():
+    if request.method == "POST":
+        data = request.get_json()
+
+        if not data or "image" not in data:
+            return render_template("index.html", message="No image data received.")
+
+        base64_data = data["image"]
+
+        # Remove the data URI prefix if present
+        match = re.match(r"^data:image\/\w+;base64,(.*)", base64_data)
+        if match:
+            base64_data = match.group(1)
+
+        try:
+            image_bytes = base64.b64decode(base64_data)
+        except Exception as e:
+            return render_template("index.html", message=f"Base64 decoding failed: {str(e)}")
+
+        # Save the image
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        filename = f"esp32cam_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+
+        with open(file_path, "wb") as f:
+            f.write(image_bytes)
+
+        img_relative_path = os.path.join("static", "uploads", filename)
+
+        # 🧠 Predict
+        predicted_class, confidence = predict_image(file_path)
+
+        return render_template("index.html", uploaded_file=img_relative_path, bird=predicted_class, confidence=confidence)
+
+    return render_template("index.html")
+
+@app.route('/uploadNow', methods=['POST'])
 def upload():
     received = request
     img = None
