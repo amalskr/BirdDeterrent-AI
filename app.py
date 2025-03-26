@@ -1,12 +1,12 @@
-import os, cv2, base64, re
+import cv2
+import os
 import numpy as np
 from flask import Flask, render_template, request, jsonify
 from tensorflow import keras
+import requests
+from io import BytesIO
+from PIL import Image
 from datetime import datetime
-from multiprocessing import Value
-
-# declare counter variable
-counter = Value('i', 0)
 
 app = Flask(__name__)
 
@@ -19,6 +19,55 @@ model.trainable = False
 
 # Define class labels
 class_labels = {0: "none", 1: "target"}
+
+
+#=========== URL base Prediction Start
+# predict using image url
+@app.route('/predict', methods=['GET'])
+def predict():
+    image_url = request.args.get('img_url')
+
+    if not image_url:
+        return jsonify({"error": "Missing 'url' parameter"}), 400
+
+    # Save in UPLOAD_FOLDER
+    filename = "temp_img.jpg"
+    save_path = os.path.join(UPLOAD_FOLDER, filename)
+    success, message = temp_save(image_url, save_path)
+
+    # Classify Image
+    predicted_class, confidence = predict_image(save_path)
+    confidence_rate = f"{confidence:.2f}%"
+
+    # remove temp file
+    os.remove(save_path)
+
+    if success:
+        return jsonify({
+            "status": "success",
+            "attack": predicted_class,
+            "confidence": confidence_rate
+        })
+    else:
+        return jsonify({"status": "error", "message": message}), 500
+
+# Temp save url image for prediction
+def temp_save(url, save_path):
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()  # Raise error for HTTP issues
+
+        with open(save_path, 'wb') as file:
+            for chunk in response.iter_content(1024):
+                file.write(chunk)
+
+        return True, f"Image saved to {save_path}"
+    except requests.exceptions.RequestException as e:
+        return False, f"Failed to download image: {str(e)}"
+    except IOError as e:
+        return False, f"Failed to save image: {str(e)}"
+
+#=========== URL base Prediction done
 
 # Prediction Function
 def predict_image(image_path):
@@ -38,6 +87,8 @@ def predict_image(image_path):
 
     return predicted_label, confidence * 100  # Return class name & confidence %
 
+
+# main view as index
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -59,91 +110,11 @@ def index():
         # Classify Image
         predicted_class, confidence = predict_image(file_path)
 
-        return render_template("index.html", uploaded_file=img_relative_path, bird=predicted_class, confidence=confidence)
+        return render_template("index.html", uploaded_file=img_relative_path, bird=predicted_class,
+                               confidence=confidence)
 
     return render_template("index.html")
 
-
-def save_img(img):
-    with counter.get_lock():
-        counter.value += 1
-        count = counter.value
-
-    if not os.path.isdir(UPLOAD_FOLDER):
-        os.mkdir(UPLOAD_FOLDER)
-    cv2.imwrite(os.path.join("static", "uploads","img_"+str(count)+".jpg"), img)
-# print("Image Saved", end="\n") # debug
-
-@app.route("/upload", methods=["GET", "POST"])
-def upload_predict():
-    if request.method == "POST":
-        data = request.get_json()
-
-        if not data or "image" not in data:
-            return render_template("index.html", message="No image data received.")
-
-        base64_data = data["image"]
-
-        # Remove the data URI prefix if present
-        match = re.match(r"^data:image\/\w+;base64,(.*)", base64_data)
-        if match:
-            base64_data = match.group(1)
-
-        try:
-            image_bytes = base64.b64decode(base64_data)
-        except Exception as e:
-            return render_template("index.html", message=f"Base64 decoding failed: {str(e)}")
-
-        # Save the image
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-        filename = f"esp32cam_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-        file_path = os.path.join(UPLOAD_FOLDER, filename)
-
-        with open(file_path, "wb") as f:
-            f.write(image_bytes)
-
-        img_relative_path = os.path.join("static", "uploads", filename)
-
-        # 🧠 Predict
-        predicted_class, confidence = predict_image(file_path)
-
-        return render_template("index.html", uploaded_file=img_relative_path, bird=predicted_class, confidence=confidence)
-
-    return render_template("index.html")
-
-@app.route('/uploadNow', methods=['POST'])
-def upload():
-    received = request
-    img = None
-    if received.files:
-        # convert string of image data to uint8
-        file  = received.files['imageFile']
-        nparr = np.fromstring(file.read(), np.uint8)
-        # decode image
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        save_img(img)
-
-        return "[SUCCESS] Image Received", 201
-    else:
-        return "[FAILED] Image Not Received", 204
-
-@app.route('/uploadOld', methods=['POST'])
-def upload_image():
-    if 'imageFile' not in request.files:
-        return '❌ No imageFile field in request', 400
-
-    image = request.files['imageFile']
-
-    if image.filename == '':
-        return '❌ No selected file', 400
-
-    # Save image with timestamp
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    filename = datetime.now().strftime("esp32_%Y%m%d_%H%M%S.jpeg")
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-    image.save(filepath)
-
-    return '✅ Image uploaded successfully!', 200
 
 @app.route('/gallery')
 def gallery():
@@ -153,4 +124,5 @@ def gallery():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True)
