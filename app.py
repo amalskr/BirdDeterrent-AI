@@ -48,7 +48,7 @@ def predict():
     confidence_rate = f"{confidence:.2f}%"
 
     # remove temp file
-    os.remove(save_path)
+    #os.remove(save_path)
 
     if success:
         return jsonify({
