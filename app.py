@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "model", "wpb_model_opti.keras")
+MODEL_PATH = os.path.join(BASE_DIR, "model", "wpb_7.keras")
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
 
 model = keras.models.load_model(MODEL_PATH, compile=False)
